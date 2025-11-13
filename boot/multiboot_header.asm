@@ -1,3 +1,4 @@
+section .note.GNU-stack note  ; Mark the stack as non-executable, no data is needed here
 section .multiboot_header
 
 header_start:
@@ -82,9 +83,23 @@ check_long_mode:
     ret
 
 .no_long_mode:
-    mov al, "L"
-    mov [0xb8000], al
+    mov esi, error_message
+    mov edi, 0xB8000  ; VGA text mode buffer
+
+.print_loop:
+    lodsb         ; Load byte from string to AL, increment ESI
+    cmp al, 0
+    je .hang
+    mov ah, 0x04  ; White on black
+    stosw
+    jmp .print_loop
+
+.hang:
     hlt
+    jmp .hang
+
+error_message:
+    db "CPU does not support long mode!", 0
 
 setup_page_tables:
     ; Map P4[0] -> P3
@@ -101,9 +116,9 @@ setup_page_tables:
     mov ecx, 0
 
 .map_p2_table:
-    mov eax, 0x200000  ; 2MB
+    mov eax, 0x200000   ; 2MB
     mul ecx
-    or eax, 0b10000011 ; present + writable + huge page
+    or eax, 0b10000011  ; present + writable + huge page
     mov [p2_table + ecx * 8], eax
     inc ecx
     cmp ecx, 512

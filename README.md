@@ -205,6 +205,13 @@ build-std = ["core", "compiler_builtins"]  # Rebuild stdlib for bare metal
 make setup
 ```
 
+**Making ISO fails**:
+- Sometimes an error, stating that `grub-mkrescue: error: 'xorriso' invocation failed` can occur (especially after editing ASM files). In this case it's best to perform a clean build:
+
+```bash
+make clean build
+```
+
 **QEMU shows only GRUB prompt**:
 - Check that `boot/grub.cfg` has correct kernel path
 - Verify kernel.bin is being copied to ISO: `ls -lh build/iso/boot/`

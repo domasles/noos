@@ -43,6 +43,7 @@ ISO_FILE := $(ISO_BUILD)/noos.iso
 # Build settings
 LD_FLAGS := -m elf_x86_64 -n -T $(CONFIG_DIR)/linker.ld
 CARGO_FLAGS := --release
+GRUB_FLAGS := --quiet
 NASM_FLAGS := -f elf64
 
 # Colors (ANSI escape codes)
@@ -107,7 +108,7 @@ $(ISO_FILE): $(KERNEL_BIN) | $(ISO_BUILD)/boot/grub
 	@printf "$(YELLOW)→ [4/4] Creating ISO...$(RESET)\n"
 	@cp $(KERNEL_BIN) $(ISO_BUILD)/boot/kernel.bin
 	@cp $(BOOT_DIR)/grub.cfg $(ISO_BUILD)/boot/grub/grub.cfg
-	@$(GRUB_MKRESCUE) --verbose -o $@ $(ISO_BUILD) 2>&1 | grep -v "cannot find a device" || true
+	@$(GRUB_MKRESCUE) $(GRUB_FLAGS) -o $@ $(ISO_BUILD) 2>&1 | grep -v "cannot find a device" || true
 	@printf "$(GREEN)✓ ISO built: $(RESET)$(CYAN)$(ISO_FILE)$(RESET)\n"
 
 iso: kernel $(ISO_FILE)
