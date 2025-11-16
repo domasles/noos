@@ -158,7 +158,8 @@ long_mode_start:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    
+
+    mov edi, edi
     call kernel_main  ; Call the Rust entry point
     cli               ; If we return, hang
 
