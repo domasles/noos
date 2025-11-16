@@ -13,11 +13,10 @@ endif
 
 .PHONY: all build iso run clean help setup
 
-# Load Rust environment if available
 SHELL := /bin/bash
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-# Configuration
+# Tools
 GRUB_MKRESCUE := grub-mkrescue
 QEMU := qemu-system-x86_64
 CARGO := cargo
@@ -35,24 +34,27 @@ BOOT_DIR := boot
 KERNEL_BUILD := $(BUILD_DIR)/kernel
 ISO_BUILD := $(BUILD_DIR)/iso
 
+# Sources (wildcards)
+ASM_SOURCES := $(wildcard $(BOOT_DIR)/src/*.asm $(BOOT_DIR)/src/utils/*.asm)
+RUST_SOURCES := $(wildcard $(KERNEL_DIR)/src/*.rs)
+
 # Outputs
 MULTIBOOT_OBJ := $(KERNEL_BUILD)/multiboot.o
 KERNEL_BIN := $(KERNEL_BUILD)/kernel.bin
 ISO_FILE := $(ISO_BUILD)/noos.iso
 
-# Build settings
+# Build flags
 LD_FLAGS := -m elf_x86_64 -n -T $(CONFIG_DIR)/linker.ld
 CARGO_FLAGS := --release
 GRUB_FLAGS := --quiet
 NASM_FLAGS := -f elf64
 
-# Colors (ANSI escape codes)
+# Colors
 YELLOW := $(shell printf "\033[33m")
 GREEN := $(shell printf "\033[32m")
 CYAN := $(shell printf "\033[36m")
 RESET := $(shell printf "\033[0m")
 
-# Colors for output
 define print_green
 	@echo "✓ $(1)"
 endef
@@ -61,12 +63,14 @@ define print_yellow
 	@echo "→ $(1)"
 endef
 
+# Default target
 all: precheck build iso
 
 precheck:
 	@echo "Checking required tools..."
 	$(foreach tool,$(REQUIRED_TOOLS),$(call check_tool,$(tool)))
 
+# Targets
 help:
 	@echo "NoOS - Rust Operating System"
 	@echo ""
@@ -104,6 +108,17 @@ build: kernel iso
 
 kernel: $(KERNEL_BIN)
 
+$(MULTIBOOT_OBJ): $(ASM_SOURCES) | $(KERNEL_BUILD)
+	@printf "$(YELLOW)→ [1/3] Assembling bootloader...$(RESET)\n"
+	@$(NASM) $(NASM_FLAGS) $(BOOT_DIR)/src/boot.asm -o $@
+
+$(KERNEL_BIN): $(MULTIBOOT_OBJ) $(RUST_SOURCES)
+	@printf "$(YELLOW)→ [2/3] Building Rust kernel...$(RESET)\n"
+	@cd $(KERNEL_DIR) && $(CARGO) build $(CARGO_FLAGS)
+	@printf "$(YELLOW)→ [3/3] Linking kernel...$(RESET)\n"
+	@$(LD) $(LD_FLAGS) -o $@ $(MULTIBOOT_OBJ) $(KERNEL_DIR)/target/x86_64-unknown-none/release/libnoos_kernel.a
+	@printf "$(GREEN)✓ Kernel built: $(RESET)$(CYAN)$(KERNEL_BIN)$(RESET)\n"
+
 $(ISO_FILE): $(KERNEL_BIN) | $(ISO_BUILD)/boot/grub
 	@printf "$(YELLOW)→ [4/4] Creating ISO...$(RESET)\n"
 	@cp $(KERNEL_BIN) $(ISO_BUILD)/boot/kernel.bin
@@ -111,7 +126,7 @@ $(ISO_FILE): $(KERNEL_BIN) | $(ISO_BUILD)/boot/grub
 	@$(GRUB_MKRESCUE) $(GRUB_FLAGS) -o $@ $(ISO_BUILD) 2>&1 | grep -v "cannot find a device" || true
 	@printf "$(GREEN)✓ ISO built: $(RESET)$(CYAN)$(ISO_FILE)$(RESET)\n"
 
-iso: kernel $(ISO_FILE)
+iso: $(ISO_FILE)
 
 run: iso
 	@printf "\n"
@@ -126,6 +141,7 @@ clean:
 	@if command -v cargo &> /dev/null; then cd $(KERNEL_DIR) && $(CARGO) clean; fi
 	@printf "$(GREEN)✓ Clean complete$(RESET)\n"
 
+# Create directories if missing
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
@@ -135,17 +151,7 @@ $(KERNEL_BUILD):
 $(ISO_BUILD)/boot/grub:
 	@mkdir -p $(ISO_BUILD)/boot/grub
 
-$(MULTIBOOT_OBJ): $(BOOT_DIR)/multiboot_header.asm | $(KERNEL_BUILD)
-	@printf "$(YELLOW)→ [1/3] Assembling bootloader...$(RESET)\n"
-	@$(NASM) $(NASM_FLAGS) $< -o $@
-
-$(KERNEL_BIN): $(MULTIBOOT_OBJ)
-	@printf "$(YELLOW)→ [2/3] Building Rust kernel...$(RESET)\n"
-	@cd $(KERNEL_DIR) && $(CARGO) build $(CARGO_FLAGS)
-	@printf "$(YELLOW)→ [3/3] Linking kernel...$(RESET)\n"
-	@$(LD) $(LD_FLAGS) -o $@ $< $(KERNEL_DIR)/target/x86_64-unknown-none/release/libnoos_kernel.a
-	@printf "$(GREEN)✓ Kernel built: $(RESET)$(CYAN)$(KERNEL_BIN)$(RESET)\n"
-
+# Tool check
 define check_tool
 	@command -v $(1) >/dev/null 2>&1 || { \
 		echo "Error: $(1) not found. Please install it (try 'make setup')."; \
