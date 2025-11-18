@@ -1,8 +1,9 @@
-%include "boot/src/multiboot2.asm"
-%include "boot/src/gdt.asm"
-%include "boot/src/paging.asm"
-%include "boot/src/long_mode.asm"
 %include "boot/src/utils/print.asm"
+%include "boot/src/multiboot2.asm"
+%include "boot/src/long_mode.asm"
+%include "boot/src/paging.asm"
+%include "boot/src/gdt.asm"
+%include "boot/src/idt.asm"
 
 section .bss
 align 4096
