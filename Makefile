@@ -109,18 +109,20 @@ build: kernel iso
 kernel: $(KERNEL_BIN)
 
 $(MULTIBOOT_OBJ): $(ASM_SOURCES) | $(KERNEL_BUILD)
-	@printf "$(YELLOW)→ [1/3] Assembling bootloader...$(RESET)\n"
+	@printf "$(YELLOW)→ [1/5] Assembling bootloader...$(RESET)\n"
 	@$(NASM) $(NASM_FLAGS) $(BOOT_DIR)/src/boot.asm -o $@
 
 $(KERNEL_BIN): $(MULTIBOOT_OBJ) $(RUST_SOURCES)
-	@printf "$(YELLOW)→ [2/3] Building Rust kernel...$(RESET)\n"
+	@printf "$(YELLOW)→ [2/5] Building Rust kernel...$(RESET)\n"
 	@cd $(KERNEL_DIR) && $(CARGO) build $(CARGO_FLAGS)
-	@printf "$(YELLOW)→ [3/3] Linking kernel...$(RESET)\n"
+	@printf "$(YELLOW)→ [3/5] Linking kernel...$(RESET)\n"
 	@$(LD) $(LD_FLAGS) -o $@ $(MULTIBOOT_OBJ) $(KERNEL_DIR)/target/x86_64-unknown-none/release/libnoos_kernel.a
 	@printf "$(GREEN)✓ Kernel built: $(RESET)$(CYAN)$(KERNEL_BIN)$(RESET)\n"
 
 $(ISO_FILE): $(KERNEL_BIN) | $(ISO_BUILD)/boot/grub
-	@printf "$(YELLOW)→ [4/4] Creating ISO...$(RESET)\n"
+	@printf "$(YELLOW)→ [4/5] Cleaning old ISO build...$(RESET)\n"
+	@rm -f $(ISO_FILE)
+	@printf "$(YELLOW)→ [5/5] Creating ISO...$(RESET)\n"
 	@cp $(KERNEL_BIN) $(ISO_BUILD)/boot/kernel.bin
 	@cp $(BOOT_DIR)/grub.cfg $(ISO_BUILD)/boot/grub/grub.cfg
 	@$(GRUB_MKRESCUE) $(GRUB_FLAGS) -o $@ $(ISO_BUILD) 2>&1 | grep -v "cannot find a device" || true
