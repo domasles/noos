@@ -10,7 +10,7 @@ lazy_static! {
 }
 
 extern "x86-interrupt" fn breakpoint_handler(_stack_frame: InterruptStackFrame) {
-    crate::drivers::vga::print_string("Breakpoint hit!\n");
+    crate::println!("Breakpoint hit!");
 }
 
 pub fn init_idt() {

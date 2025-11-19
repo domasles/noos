@@ -13,28 +13,26 @@ unsafe extern "C" { unsafe fn hlt(); }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
-    drivers::vga::clear_screen();
+    crate::clearscr!();
 
     multiboot::load_boot_info(multiboot_info);
     idt::init_idt();
 
-    if multiboot::debug_mode_enabled() { drivers::vga::print_string("Debug mode enabled\n"); }
-    if multiboot::release_mode_enabled() { drivers::vga::print_string("Release mode enabled\n"); }
+    if multiboot::debug_mode_enabled() { crate::println!("Debug mode enabled"); }
+    if multiboot::release_mode_enabled() { crate::println!("Release mode enabled"); }
 
-    drivers::vga::print_string("Kernel initialized successfully!\n");
-    drivers::vga::print_string("Welcome to NoOS!\n");
+    crate::println!("Kernel initialized successfully!");
+    crate::println!("Welcome to NoOS!");
 
     loop { unsafe { hlt() } }
 }
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    drivers::vga::print_string("\n\nKERNEL PANIC!\n");
+    crate::println!("KERNEL PANIC!");
 
     if let Some(location) = info.location() {
-        drivers::vga::print_string("Location: ");
-        drivers::vga::print_string(location.file());
-        drivers::vga::print_string("\n");
+        crate::println!("Location: {}:{}", location.file(), location.line());
     }
 
     loop { unsafe { hlt() } }
