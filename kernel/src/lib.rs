@@ -9,10 +9,11 @@ pub mod idt;
 
 use core::panic::PanicInfo;
 
+unsafe extern "C" { unsafe fn hlt(); }
+
 #[unsafe(no_mangle)]
 pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
     multiboot::load_boot_info(multiboot_info);
-    idt::init_idt();
 
     drivers::vga::clear_screen();
     drivers::vga::print_string("Kernel initialized successfully!\n");
@@ -22,7 +23,7 @@ pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
 
     drivers::vga::print_string("Welcome to NoOS!\n");
 
-    loop { unsafe { core::arch::asm!("hlt") } }
+    loop { unsafe { hlt() } }
 }
 
 #[panic_handler]
@@ -35,5 +36,5 @@ fn panic(info: &PanicInfo) -> ! {
         drivers::vga::print_string("\n");
     }
     
-    loop { unsafe { core::arch::asm!("hlt") } }
+    loop { unsafe { hlt() } }
 }

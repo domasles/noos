@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use core::fmt::Write;
 use spin::Mutex;
 use core::fmt;
 use core::ptr;
@@ -165,7 +166,6 @@ lazy_static! {
 }
 
 pub fn print_string(s: &str) {
-    use core::fmt::Write;
     WRITER.lock().write_str(s).unwrap();
 }
 
@@ -186,6 +186,5 @@ macro_rules! println {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-    use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
 }

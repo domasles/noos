@@ -1,17 +1,17 @@
 use multiboot2::{BootInformation, BootInformationHeader};
+use spin::Once;
 
-static mut BOOT_INFO: *const BootInformation = core::ptr::null();
+static BOOT_INFO: Once<BootInformation> = Once::new();
 
 pub fn load_boot_info(multiboot_info: u64) {
     let info = unsafe { BootInformation::load(multiboot_info as *const BootInformationHeader) }.unwrap();
-    unsafe { BOOT_INFO = &info; }
+    BOOT_INFO.call_once(|| info);
 }
 
 pub fn get_command_line<'a>() -> Option<&'a str> {
-    unsafe {
-        if BOOT_INFO.is_null() { None }
-        else { (*BOOT_INFO).command_line_tag().map(|tag| tag.cmdline().unwrap_or("Invalid UTF-8")) }
-    }
+    BOOT_INFO.get().and_then(|info| {
+        info.command_line_tag().map(|tag| tag.cmdline().unwrap_or("Invalid UTF-8"))
+    })
 }
 
 pub fn has_command_line() -> bool {
