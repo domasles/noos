@@ -13,14 +13,15 @@ unsafe extern "C" { unsafe fn hlt(); }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
-    multiboot::load_boot_info(multiboot_info);
-
     drivers::vga::clear_screen();
-    drivers::vga::print_string("Kernel initialized successfully!\n");
+
+    multiboot::load_boot_info(multiboot_info);
+    idt::init_idt();
 
     if multiboot::debug_mode_enabled() { drivers::vga::print_string("Debug mode enabled\n"); }
     if multiboot::release_mode_enabled() { drivers::vga::print_string("Release mode enabled\n"); }
 
+    drivers::vga::print_string("Kernel initialized successfully!\n");
     drivers::vga::print_string("Welcome to NoOS!\n");
 
     loop { unsafe { hlt() } }
@@ -35,6 +36,6 @@ fn panic(info: &PanicInfo) -> ! {
         drivers::vga::print_string(location.file());
         drivers::vga::print_string("\n");
     }
-    
+
     loop { unsafe { hlt() } }
 }
