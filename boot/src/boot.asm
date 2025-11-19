@@ -21,7 +21,7 @@ extern kernel_main
 
 _start:
     mov esp, stack_top  ; Setup stack
-    mov edi, ebx        ; Save multiboot info
+    push ebx            ; Save multiboot info
 
     call check_long_mode
     call setup_page_tables
@@ -40,7 +40,7 @@ long_mode_start:
     mov fs, ax
     mov gs, ax
 
-    mov edi, edi
+    pop rdi           ; Get multiboot info
     call kernel_main  ; Call the Rust entry point
     cli               ; If we return, hang
 
