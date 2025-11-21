@@ -1,6 +1,7 @@
 %include "boot/src/utils/print.asm"
 %include "boot/src/multiboot2.asm"
 %include "boot/src/long_mode.asm"
+%include "boot/src/pic/remap.asm"
 %include "boot/src/extern.asm"
 %include "boot/src/paging.asm"
 %include "boot/src/gdt.asm"
@@ -11,6 +12,7 @@ align 4096
 p4_table: resb 4096
 p3_table: resb 4096
 p2_table: resb 4096
+
 stack_bottom: resb 16384  ; 16 KiB stack
 stack_top:
 
@@ -39,6 +41,9 @@ long_mode_start:
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+    call remap_pic    ; Remap PIC
+    sti               ; Enable interrupts
 
     pop rdi           ; Get multiboot info
     call kernel_main  ; Call the Rust entry point

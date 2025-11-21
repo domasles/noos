@@ -6,6 +6,7 @@
 pub mod multiboot;
 pub mod drivers;
 pub mod idt;
+pub mod pic;
 
 use core::panic::PanicInfo;
 
@@ -16,7 +17,7 @@ pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
     crate::clearscr!();
 
     multiboot::load_boot_info(multiboot_info);
-    idt::init_idt();
+    idt::init();
 
     if multiboot::debug_mode_enabled() { crate::println!("Debug mode enabled"); }
     if multiboot::release_mode_enabled() { crate::println!("Release mode enabled"); }

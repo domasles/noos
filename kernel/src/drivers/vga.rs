@@ -85,9 +85,7 @@ impl Writer {
             b'\n' => self.new_line(),
 
             byte => {
-                if self.column_position >= BUFFER_WIDTH {
-                    self.new_line();
-                }
+                if self.column_position >= BUFFER_WIDTH { self.new_line(); }
 
                 let row = BUFFER_HEIGHT - 1;
                 let col = self.column_position;
@@ -140,10 +138,7 @@ impl Writer {
     }
 
     pub fn clear_screen(&mut self) {
-        for row in 0..BUFFER_HEIGHT {
-            self.clear_row(row);
-        }
-
+        for row in 0..BUFFER_HEIGHT { self.clear_row(row); }
         self.column_position = 0;
     }
 }
