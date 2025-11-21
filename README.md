@@ -29,7 +29,7 @@ It's an attempt to make a 64-bit operating system kernel written in **Rust** wit
 
 ### Prerequisites
 - **Linux** or **WSL2** on Windows
-- **CMake 3.16+** not required - pure Makefile-based build system
+- **GNU Make 4.3+** not required - pure Makefile-based build system
 - **Git** for repository management
 
 ### Setup

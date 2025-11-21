@@ -14,7 +14,9 @@ endif
 .PHONY: all build iso run clean help setup
 
 SHELL := /bin/bash
+
 export PATH := $(HOME)/.cargo/bin:$(PATH)
+export GLOBSTAR := 1
 
 # Tools
 GRUB_MKRESCUE := grub-mkrescue
@@ -35,8 +37,8 @@ KERNEL_BUILD := $(BUILD_DIR)/kernel
 ISO_BUILD := $(BUILD_DIR)/iso
 
 # Sources (wildcards)
-ASM_SOURCES := $(wildcard $(BOOT_DIR)/src/*.asm $(BOOT_DIR)/src/utils/*.asm)
-RUST_SOURCES := $(wildcard $(KERNEL_DIR)/src/*.rs)
+ASM_SOURCES := $(wildcard $(BOOT_DIR)/src/**/*.asm)
+RUST_SOURCES := $(wildcard $(KERNEL_DIR)/src/**/*.rs)
 
 # Outputs
 MULTIBOOT_OBJ := $(KERNEL_BUILD)/multiboot.o

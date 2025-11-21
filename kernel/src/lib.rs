@@ -10,6 +10,8 @@ pub mod pic;
 
 use core::panic::PanicInfo;
 
+use crate::drivers::keyboard::process_scancodes;
+
 unsafe extern "C" { unsafe fn hlt(); }
 
 #[unsafe(no_mangle)]
@@ -25,7 +27,10 @@ pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
     crate::println!("Kernel initialized successfully!");
     crate::println!("Welcome to NoOS!");
 
-    loop { unsafe { hlt() } }
+    loop {
+        process_scancodes();
+        unsafe { hlt() }
+    }
 }
 
 #[panic_handler]

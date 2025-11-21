@@ -16,6 +16,8 @@ panic = "abort"
 [dependencies]
 spin = "0.10.0"
 x86_64 = "0.15.2"
+heapless = "0.9.2"
+pc-keyboard = "0.8.0"
 
 multiboot2 = { version = "0.24.0", default-features = false }
 lazy_static = { version = "1.5.0", features = ["spin_no_std"] }
