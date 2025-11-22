@@ -26,17 +26,13 @@ impl KeyboardDriver {
         unsafe { port.read() }
     }
 
-    pub fn handle_scancode(&self, scancode: u8) {
+    pub fn handle_scancode(&self, scancode: u8, shell: &mut crate::shell::Shell) {
         let mut kb = self.keyboard.lock();
 
         if let Ok(Some(event)) = kb.add_byte(scancode) {
             if let Some(key) = kb.process_keyevent(event) {
                 match key {
-                    DecodedKey::Unicode(c) => {
-                        if c == '\u{8}' { crate::drivers::vga::_backspace(); }
-                        else { crate::print!("{}", c); }
-                    }
-
+                    DecodedKey::Unicode(c) => { shell.handle_char(c); }
                     DecodedKey::RawKey(_) => {}  // Ignore raw keys for now
                 }
             }
@@ -46,10 +42,11 @@ impl KeyboardDriver {
 
 pub static KEYBOARD: KeyboardDriver = KeyboardDriver::new();
 
-pub fn process_scancodes() {
+pub fn process_scancodes(shell: &mut crate::shell::Shell) {
     let mut queue = SCANCODE_QUEUE.lock();
+
     while let Some(scancode) = queue.dequeue() {
-        KEYBOARD.handle_scancode(scancode);
+        KEYBOARD.handle_scancode(scancode, shell);
     }
 }
 

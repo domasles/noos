@@ -5,6 +5,7 @@
 
 pub mod multiboot;
 pub mod drivers;
+pub mod shell;
 pub mod idt;
 pub mod pic;
 
@@ -27,8 +28,11 @@ pub extern "C" fn kernel_main(multiboot_info: u64) -> ! {
     crate::println!("Kernel initialized successfully!");
     crate::println!("Welcome to NoOS!");
 
+    let mut shell = shell::Shell::new();
+    shell.show_prompt();
+
     loop {
-        process_scancodes();
+        process_scancodes(&mut shell);
         unsafe { hlt() }
     }
 }
