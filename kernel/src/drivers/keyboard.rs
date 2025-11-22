@@ -1,7 +1,7 @@
 use pc_keyboard::{Keyboard, layouts, ScancodeSet1, DecodedKey, HandleControl};
 
+use x86_64::instructions::{port::Port, interrupts::without_interrupts};
 use x86_64::structures::idt::InterruptStackFrame;
-use x86_64::instructions::port::Port;
 
 use heapless::spsc::Queue;
 use spin::Mutex;
@@ -18,7 +18,7 @@ pub struct KeyboardDriver {
 
 impl KeyboardDriver {
     pub const fn new() -> Self {
-        KeyboardDriver { keyboard: Mutex::new(Keyboard::new(ScancodeSet1::new(), layouts::Us104Key, HandleControl::Ignore)) }
+        KeyboardDriver { keyboard: Mutex::new(Keyboard::new(ScancodeSet1::new(), layouts::Us104Key, HandleControl::MapLettersToUnicode)) }
     }
 
     fn read_scancode(&self) -> u8 {
@@ -33,7 +33,7 @@ impl KeyboardDriver {
             if let Some(key) = kb.process_keyevent(event) {
                 match key {
                     DecodedKey::Unicode(c) => { shell.handle_char(c); }
-                    DecodedKey::RawKey(_) => {}  // Ignore raw keys for now
+                    DecodedKey::RawKey(_keycode) => {} // Ignore specal keys for now. This prevents queue flooding
                 }
             }
         }
@@ -43,17 +43,30 @@ impl KeyboardDriver {
 pub static KEYBOARD: KeyboardDriver = KeyboardDriver::new();
 
 pub fn process_scancodes(shell: &mut crate::shell::Shell) {
-    let mut queue = SCANCODE_QUEUE.lock();
-
-    while let Some(scancode) = queue.dequeue() {
-        KEYBOARD.handle_scancode(scancode, shell);
-    }
+    // Process queue with interrupts disabled to prevent contention
+    without_interrupts(|| {
+        let mut queue = SCANCODE_QUEUE.lock();
+        
+        while let Some(scancode) = queue.dequeue() {
+            drop(queue);  // Release lock before processing
+            KEYBOARD.handle_scancode(scancode, shell);
+            queue = SCANCODE_QUEUE.lock();  // Re-acquire for next iteration
+        }
+    });
 }
 
 pub extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     let scancode = KEYBOARD.read_scancode();
-    let mut queue = SCANCODE_QUEUE.lock();
+    
+    // Try to get lock without blocking
+    // If can't get lock, drop the scancode (better than hanging)
 
-    queue.enqueue(scancode).ok();
+    if let Some(mut queue) = SCANCODE_QUEUE.try_lock() {
+        if queue.enqueue(scancode).is_err() {
+            queue.dequeue();
+            queue.enqueue(scancode).ok();
+        }
+    }
+    
     send_eoi(1);
 }
