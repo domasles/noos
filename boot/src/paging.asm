@@ -8,12 +8,12 @@ setup_page_tables:
     mov eax, p3_table
     or eax, 0b11         ; Present + writable
     mov [p4_table], eax
-    
+
     ; Map P3[0] -> P2
     mov eax, p2_table
     or eax, 0b11         ; Present + writable
     mov [p3_table], eax
-    
+
     ; Map P2 entries (identity map first 2MB with 2MB pages)
     mov ecx, 0
 

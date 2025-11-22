@@ -38,7 +38,8 @@ fn panic(info: &PanicInfo) -> ! {
     crate::println!("KERNEL PANIC!");
 
     if let Some(location) = info.location() {
-        crate::println!("Location: {}:{}", location.file(), location.line());
+        crate::println!("   Location: {}:{}", location.file(), location.line());
+        crate::println!("       error: {}", info.message());
     }
 
     loop { unsafe { hlt() } }

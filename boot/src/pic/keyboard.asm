@@ -1,4 +1,5 @@
 bits 64
+
 unmask_keyboard:
     mov al, 0xFD
     out 0x21, al

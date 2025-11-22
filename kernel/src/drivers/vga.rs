@@ -1,8 +1,12 @@
+use x86_64::instructions::port::Port;
+
 use lazy_static::lazy_static;
+
 use core::fmt::Write;
-use spin::Mutex;
 use core::fmt;
 use core::ptr;
+
+use spin::Mutex;
 
 const VGA_BUFFER_ADDRESS: usize = 0xb8000;
 const BUFFER_HEIGHT: usize = 25;
@@ -94,6 +98,7 @@ impl Writer {
                 self.write_char(
                     row,
                     col,
+
                     ScreenChar {
                         ascii_character: byte,
                         color_code,
@@ -103,6 +108,8 @@ impl Writer {
                 self.column_position += 1;
             }
         }
+
+        self.update_cursor();
     }
 
     pub fn write_string(&mut self, s: &str) {
@@ -124,6 +131,7 @@ impl Writer {
 
         self.clear_row(BUFFER_HEIGHT - 1);
         self.column_position = 0;
+        self.update_cursor();
     }
 
     fn clear_row(&mut self, row: usize) {
@@ -140,6 +148,38 @@ impl Writer {
     pub fn clear_screen(&mut self) {
         for row in 0..BUFFER_HEIGHT { self.clear_row(row); }
         self.column_position = 0;
+        self.update_cursor();
+    }
+
+    pub fn update_cursor(&mut self) {
+        let pos = (BUFFER_HEIGHT - 1) * BUFFER_WIDTH + self.column_position;
+
+        let mut cmd_port = Port::<u8>::new(0x3D4);
+        let mut data_port = Port::<u8>::new(0x3D5);
+
+        unsafe {
+            // Send low byte of cursor position
+            cmd_port.write(0x0F);
+            data_port.write((pos & 0xFF) as u8);
+
+            // Send high byte of cursor position
+            cmd_port.write(0x0E);
+            data_port.write(((pos >> 8) & 0xFF) as u8);
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        if self.column_position > 0 {
+            self.column_position -= 1;
+
+            let blank = ScreenChar {
+                ascii_character: b' ',
+                color_code: self.color_code,
+            };
+
+            self.write_char(BUFFER_HEIGHT - 1, self.column_position, blank);
+            self.update_cursor();
+        }
     }
 }
 
@@ -168,6 +208,11 @@ pub fn _print(args: fmt::Arguments) {
 #[doc(hidden)]
 pub fn _clear_screen() {
     WRITER.lock().clear_screen();
+}
+
+#[doc(hidden)]
+pub fn _backspace() {
+    WRITER.lock().backspace();
 }
 
 #[macro_export]

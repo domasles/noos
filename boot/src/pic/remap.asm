@@ -1,6 +1,7 @@
 %include "boot/src/pic/keyboard.asm"
 
 bits 64
+
 remap_pic:
     mov al, 0x11  ; ICW1: start init
     out 0x20, al  ; Master

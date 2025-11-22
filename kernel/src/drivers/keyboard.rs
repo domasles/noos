@@ -31,8 +31,13 @@ impl KeyboardDriver {
 
         if let Ok(Some(event)) = kb.add_byte(scancode) {
             if let Some(key) = kb.process_keyevent(event) {
-                if let DecodedKey::Unicode(c) = key {
-                    crate::print!("{}", c);
+                match key {
+                    DecodedKey::Unicode(c) => {
+                        if c == '\u{8}' { crate::drivers::vga::_backspace(); }
+                        else { crate::print!("{}", c); }
+                    }
+
+                    DecodedKey::RawKey(_) => {}  // Ignore raw keys for now
                 }
             }
         }

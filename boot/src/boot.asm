@@ -18,6 +18,7 @@ stack_top:
 
 section .text
 bits 32
+
 global _start
 extern kernel_main
 
@@ -33,6 +34,7 @@ _start:
     jmp gdt64.code:long_mode_start  ; Jump to long mode
 
 bits 64
+
 long_mode_start:
     ; Load null segment selectors
     mov ax, 0
